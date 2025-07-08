@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Shield, Zap, Globe, Lock, CheckCircle, ArrowRight } from 'lucide-react';
+import { Shield, Zap, Globe, Lock, CheckCircle, ArrowRight, Brain, Users, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileUpload } from '@/components/FileUpload';
+import { AdvancedFileUpload } from '@/components/AdvancedFileUpload';
 import { OTPInput } from '@/components/OTPInput';
 import { Dashboard } from '@/components/Dashboard';
+import { AuthComponent } from '@/components/AuthComponent';
+import { AIInsightsDashboard } from '@/components/AIInsightsDashboard';
 
 interface FileData {
   id: string;
@@ -19,6 +21,8 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState('upload');
   const [uploadedFile, setUploadedFile] = useState<FileData | null>(null);
   const [showOTPInput, setShowOTPInput] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
   const handleFileUploaded = (fileData: any) => {
     setUploadedFile(fileData);
@@ -29,6 +33,30 @@ const Index = () => {
     // Handle successful OTP verification
     console.log('OTP verified:', otp);
   };
+
+  const handleAuthSuccess = (userData: any) => {
+    setUser(userData);
+    setShowAuth(false);
+  };
+
+  // If not authenticated, show auth component
+  if (!user && showAuth) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <AuthComponent onAuthSuccess={handleAuthSuccess} />
+          <div className="text-center mt-6">
+            <Button 
+              variant="ghost" 
+              onClick={() => setShowAuth(false)}
+            >
+              ← Continue as Guest
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const features = [
     {
@@ -55,6 +83,45 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="bg-white/95 backdrop-blur-sm border-b border-border sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Shield className="h-8 w-8 text-primary" />
+              <span className="text-2xl font-bold">SecureShare</span>
+            </div>
+            <div className="flex items-center gap-4">
+              {user ? (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-muted-foreground">Welcome, {user.name}</span>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setActiveTab('ai-dashboard')}
+                  >
+                    <Brain className="h-4 w-4 mr-2" />
+                    AI Dashboard
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setUser(null)}
+                  >
+                    Sign Out
+                  </Button>
+                </div>
+              ) : (
+                <Button onClick={() => setShowAuth(true)}>
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Sign In
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary via-primary-glow to-secondary py-20">
         <div className="absolute inset-0 bg-black/10" />
@@ -66,12 +133,12 @@ const Index = () => {
               </div>
             </div>
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Secure File Transfer
-              <span className="block text-primary-glow">Made Simple</span>
+              AI-Powered Secure
+              <span className="block text-primary-glow">File Transfer</span>
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-white/90 max-w-3xl mx-auto">
-              Upload, share, and transfer files with military-grade security. 
-              AI-powered virus scanning and automatic expiry keep your data safe.
+              Enterprise-grade file sharing with real-time AI threat detection, 
+              smart content analysis, and military-level encryption.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
@@ -140,15 +207,16 @@ const Index = () => {
             </div>
           ) : (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto">
+              <TabsList className={`grid w-full ${user ? 'grid-cols-4' : 'grid-cols-3'} max-w-lg mx-auto`}>
                 <TabsTrigger value="upload">Upload</TabsTrigger>
                 <TabsTrigger value="share">Share</TabsTrigger>
                 <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+                {user && <TabsTrigger value="ai-dashboard">AI Insights</TabsTrigger>}
               </TabsList>
               
               <div className="mt-8">
                 <TabsContent value="upload">
-                  <FileUpload onFileUploaded={handleFileUploaded} />
+                  <AdvancedFileUpload onFileUploaded={handleFileUploaded} />
                 </TabsContent>
                 
                 <TabsContent value="share">
@@ -193,6 +261,12 @@ const Index = () => {
                 <TabsContent value="dashboard">
                   <Dashboard onUploadNew={() => setActiveTab('upload')} />
                 </TabsContent>
+                
+                {user && (
+                  <TabsContent value="ai-dashboard">
+                    <AIInsightsDashboard />
+                  </TabsContent>
+                )}
               </div>
             </Tabs>
           )}
