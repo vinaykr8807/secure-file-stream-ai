@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
-import { Shield, Zap, Globe, Lock, CheckCircle, ArrowRight, Brain, Users, LogIn } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Shield, Zap, Globe, Lock, CheckCircle, ArrowRight, Brain, Users, LogIn, Sparkles, Wind, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AdvancedFileUpload } from '@/components/AdvancedFileUpload';
 import { OTPInput } from '@/components/OTPInput';
 import { Dashboard } from '@/components/Dashboard';
-import { AuthComponent } from '@/components/AuthComponent';
+import { ModernAuthComponent } from '@/components/ModernAuthComponent';
 import { AIInsightsDashboard } from '@/components/AIInsightsDashboard';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface FileData {
   id: string;
@@ -22,7 +25,9 @@ const Index = () => {
   const [uploadedFile, setUploadedFile] = useState<FileData | null>(null);
   const [showOTPInput, setShowOTPInput] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  
+  const { user, loading, signOut } = useAuth();
+  const { actualTheme } = useTheme();
 
   const handleFileUploaded = (fileData: any) => {
     setUploadedFile(fileData);
@@ -34,20 +39,24 @@ const Index = () => {
     console.log('OTP verified:', otp);
   };
 
-  const handleAuthSuccess = (userData: any) => {
-    setUser(userData);
-    setShowAuth(false);
-  };
+  useEffect(() => {
+    // Close auth modal when user is authenticated
+    if (user && showAuth) {
+      setShowAuth(false);
+    }
+  }, [user, showAuth]);
 
   // If not authenticated, show auth component
-  if (!user && showAuth) {
+  if (showAuth && !user) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
         <div className="w-full max-w-md">
-          <AuthComponent onAuthSuccess={handleAuthSuccess} />
+          <ModernAuthComponent />
           <div className="text-center mt-6">
             <Button 
-              variant="ghost" 
+              variant="ghost"
+              className="btn-ghost-whisper"
               onClick={() => setShowAuth(false)}
             >
               ← Continue as Guest
@@ -60,41 +69,58 @@ const Index = () => {
 
   const features = [
     {
-      icon: <Shield className="h-6 w-6" />,
-      title: "End-to-End Encryption",
-      description: "Your files are encrypted before upload and remain secure throughout transfer"
-    },
-    {
-      icon: <Zap className="h-6 w-6" />,
-      title: "Lightning Fast",
-      description: "Optimized upload speeds with smart compression and AI-powered optimization"
-    },
-    {
-      icon: <Lock className="h-6 w-6" />,
-      title: "OTP Authentication",
-      description: "4-digit codes ensure only intended recipients can download your files"
+      icon: <Wind className="h-6 w-6" />,
+      title: "Ephemeral by Design",
+      description: "Files vanish automatically - no digital footprint left behind"
     },
     {
       icon: <Globe className="h-6 w-6" />,
-      title: "Global Access",
-      description: "Share files worldwide with automatic CDN delivery and proximity detection"
+      title: "Location-Aware Sharing",
+      description: "Smart proximity detection for secure local file transfers"
+    },
+    {
+      icon: <Lock className="h-6 w-6" />,
+      title: "Whisper-Level Security",
+      description: "Military-grade encryption with zero-knowledge architecture"
+    },
+    {
+      icon: <Eye className="h-6 w-6" />,
+      title: "Privacy First",
+      description: "No tracking, no logs, no permanent storage - just pure privacy"
     }
   ];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading WhispShare...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white/95 backdrop-blur-sm border-b border-border sticky top-0 z-50">
+      <header className="bg-card/80 backdrop-blur-md border-b border-border/50 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Shield className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-bold">SecureShare</span>
+              <div className="relative">
+                <Shield className="h-8 w-8 text-primary" />
+                <Sparkles className="absolute -top-1 -right-1 h-3 w-3 text-secondary animate-pulse" />
+              </div>
+              <span className="text-2xl font-bold font-display whisper-text">WhispShare</span>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <ThemeToggle />
               {user ? (
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-muted-foreground">Welcome, {user.name}</span>
+                  <span className="text-sm text-muted-foreground">
+                    Welcome, {user.user_metadata?.full_name || user.email?.split('@')[0]}
+                  </span>
                   <Button 
                     variant="outline" 
                     size="sm"
@@ -106,13 +132,16 @@ const Index = () => {
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    onClick={() => setUser(null)}
+                    onClick={signOut}
                   >
                     Sign Out
                   </Button>
                 </div>
               ) : (
-                <Button onClick={() => setShowAuth(true)}>
+                <Button 
+                  onClick={() => setShowAuth(true)}
+                  className="btn-whisper"
+                >
                   <LogIn className="h-4 w-4 mr-2" />
                   Sign In
                 </Button>
@@ -123,45 +152,56 @@ const Index = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary via-primary-glow to-secondary py-20">
-        <div className="absolute inset-0 bg-black/10" />
+      <section className="hero-section py-24 relative">
+        {/* Floating elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-20 left-10 w-20 h-20 bg-primary/10 rounded-full blur-xl animate-float" />
+          <div className="absolute top-40 right-20 w-32 h-32 bg-secondary/10 rounded-full blur-xl animate-float" style={{ animationDelay: '2s' }} />
+          <div className="absolute bottom-20 left-1/3 w-24 h-24 bg-purple-500/10 rounded-full blur-xl animate-float" style={{ animationDelay: '4s' }} />
+        </div>
+        
         <div className="relative container mx-auto px-4">
           <div className="text-center text-white">
             <div className="flex items-center justify-center mb-6">
-              <div className="bg-white/10 backdrop-blur-sm rounded-full p-4">
-                <Shield className="h-12 w-12" />
+              <div className="glass-card rounded-full p-6 whisper-glow">
+                <div className="relative">
+                  <Shield className="h-16 w-16" />
+                  <Wind className="absolute -top-2 -right-2 h-6 w-6 text-secondary animate-pulse" />
+                </div>
               </div>
             </div>
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              AI-Powered Secure
-              <span className="block text-primary-glow">File Transfer</span>
+            <h1 className="text-5xl md:text-7xl font-bold font-display mb-6">
+              <span className="block">WhispShare</span>
+              <span className="block text-3xl md:text-4xl font-normal text-white/80 mt-2">
+                Ephemeral • Location-Based • Secure
+              </span>
             </h1>
-            <p className="text-xl md:text-2xl mb-8 text-white/90 max-w-3xl mx-auto">
-              Enterprise-grade file sharing with real-time AI threat detection, 
-              smart content analysis, and military-level encryption.
+            <p className="text-xl md:text-2xl mb-10 text-white/85 max-w-4xl mx-auto leading-relaxed">
+              Share files that disappear like whispers in the wind. 
+              <span className="block mt-2">Location-aware, privacy-first, and beautifully ephemeral.</span>
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
                 size="lg" 
-                className="bg-white text-primary hover:bg-white/90"
+                className="bg-white text-primary hover:bg-white/90 h-14 px-8 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
                 onClick={() => {
                   setActiveTab('upload');
                   document.querySelector('#main-app')?.scrollIntoView({ behavior: 'smooth' });
                 }}
               >
-                Start Transfer
+                Start Whispering
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="border-white/20 text-white hover:bg-white/10"
+                className="border-white/30 text-white hover:bg-white/10 h-14 px-8 text-lg backdrop-blur-sm"
                 onClick={() => {
                   setShowOTPInput(true);
                   document.querySelector('#main-app')?.scrollIntoView({ behavior: 'smooth' });
                 }}
               >
-                Enter Download Code
+                Receive Whisper
               </Button>
             </div>
           </div>
@@ -169,26 +209,29 @@ const Index = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-muted/30">
+      <section className="py-24 bg-gradient-to-b from-muted/20 to-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Why Choose SecureShare?
+            <h2 className="text-4xl md:text-5xl font-bold font-display mb-6 whisper-text">
+              Why WhispShare?
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Built for security professionals and privacy-conscious users who demand the best
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+              Designed for those who value privacy, security, and the beauty of impermanence
             </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
-              <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-                <CardContent className="p-6 text-center">
-                  <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 text-primary">
+              <Card 
+                key={index} 
+                className="border-0 whisper-glow hover:shadow-2xl transition-all duration-500 hover:scale-105 bg-card/50 backdrop-blur-sm"
+              >
+                <CardContent className="p-8 text-center">
+                  <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 text-primary">
                     {feature.icon}
                   </div>
-                  <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
-                  <p className="text-muted-foreground">{feature.description}</p>
+                  <h3 className="text-xl font-bold mb-4 font-display">{feature.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -197,7 +240,7 @@ const Index = () => {
       </section>
 
       {/* Main Application */}
-      <section id="main-app" className="py-20">
+      <section id="main-app" className="py-24">
         <div className="container mx-auto px-4">
           {showOTPInput ? (
             <div className="max-w-md mx-auto">
@@ -205,6 +248,7 @@ const Index = () => {
               <div className="text-center mt-6">
                 <Button 
                   variant="ghost" 
+                  className="btn-ghost-whisper"
                   onClick={() => setShowOTPInput(false)}
                 >
                   ← Back to Upload
@@ -233,13 +277,13 @@ const Index = () => {
                           <div className="bg-success/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6">
                             <CheckCircle className="h-8 w-8 text-success" />
                           </div>
-                          <h3 className="text-2xl font-bold mb-4">File Ready to Share!</h3>
-                          <div className="bg-muted/50 rounded-lg p-6 mb-6">
+                          <h3 className="text-2xl font-bold font-display mb-4">Whisper Ready!</h3>
+                          <div className="bg-gradient-to-br from-muted/30 to-muted/50 rounded-xl p-6 mb-6 whisper-glow">
                             <div className="text-4xl font-mono font-bold text-primary mb-2">
                               {uploadedFile.otp}
                             </div>
                             <p className="text-sm text-muted-foreground">
-                              Share this 4-digit code with your recipient
+                              Share this whisper code with your recipient
                             </p>
                           </div>
                           <p className="text-muted-foreground mb-6">
@@ -250,16 +294,16 @@ const Index = () => {
                             onClick={() => {
                               navigator.clipboard.writeText(uploadedFile.otp);
                             }}
-                            className="w-full"
+                            className="w-full btn-whisper"
                           >
-                            Copy Download Code
+                            Copy Whisper Code
                           </Button>
                         </CardContent>
                       </Card>
                     </div>
                   ) : (
                     <div className="text-center py-12">
-                      <p className="text-muted-foreground">Upload a file first to share it</p>
+                      <p className="text-muted-foreground">Create a whisper first to share it</p>
                     </div>
                   )}
                 </TabsContent>
@@ -280,18 +324,21 @@ const Index = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-foreground text-background py-12">
+      <footer className="bg-gradient-to-r from-foreground to-foreground/95 text-background py-16">
         <div className="container mx-auto px-4">
           <div className="text-center">
             <div className="flex items-center justify-center mb-4">
-              <Shield className="h-8 w-8 mr-2" />
-              <span className="text-2xl font-bold">SecureShare</span>
+              <div className="relative mr-3">
+                <Shield className="h-8 w-8" />
+                <Wind className="absolute -top-1 -right-1 h-3 w-3 text-secondary animate-pulse" />
+              </div>
+              <span className="text-2xl font-bold font-display">WhispShare</span>
             </div>
-            <p className="text-background/70 mb-4">
-              Military-grade file transfer with AI-powered security
+            <p className="text-background/80 mb-6 text-lg">
+              Ephemeral, Location-Based File Sharing
             </p>
-            <p className="text-sm text-background/50">
-              Built with React, TypeScript, and Supabase • Files auto-delete after 4 hours
+            <p className="text-sm text-background/60">
+              Built with love for privacy • Files vanish like whispers in the wind
             </p>
           </div>
         </div>
