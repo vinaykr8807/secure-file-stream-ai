@@ -144,7 +144,10 @@ const Index = () => {
               <Button 
                 size="lg" 
                 className="bg-white text-primary hover:bg-white/90"
-                onClick={() => setActiveTab('upload')}
+                onClick={() => {
+                  setActiveTab('upload');
+                  document.querySelector('#main-app')?.scrollIntoView({ behavior: 'smooth' });
+                }}
               >
                 Start Transfer
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -153,7 +156,10 @@ const Index = () => {
                 size="lg" 
                 variant="outline" 
                 className="border-white/20 text-white hover:bg-white/10"
-                onClick={() => setShowOTPInput(true)}
+                onClick={() => {
+                  setShowOTPInput(true);
+                  document.querySelector('#main-app')?.scrollIntoView({ behavior: 'smooth' });
+                }}
               >
                 Enter Download Code
               </Button>
@@ -191,7 +197,7 @@ const Index = () => {
       </section>
 
       {/* Main Application */}
-      <section className="py-20">
+      <section id="main-app" className="py-20">
         <div className="container mx-auto px-4">
           {showOTPInput ? (
             <div className="max-w-md mx-auto">
