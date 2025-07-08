@@ -212,7 +212,7 @@
   }
   
   .drop-zone-active {
-    @apply border-primary bg-primary/8 scale-[1.02] shadow-xl;
+    @apply border-primary bg-primary/[0.08] scale-[1.02] shadow-xl;
     box-shadow: var(--shadow-whisper);
   }
   
